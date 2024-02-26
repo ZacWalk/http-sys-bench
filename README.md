@@ -1,5 +1,5 @@
 # http-sys-bench
-A HTTP Server API app to run performance tests. Written in C++.
+A Windows 'HTTP Server API' app to run performance tests. Written in C++.
 
 Uses a server process and load test process to run testing. Typical output on my machine:
 
