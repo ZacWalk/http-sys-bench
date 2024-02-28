@@ -13,6 +13,8 @@
 #include <windows.h>
 #include <winhttp.h>
 
+#include "../common.h"
+
 
 #pragma comment(lib, "winhttp.lib")
 
@@ -113,14 +115,10 @@ std::string send_get_request(const wchar_t *server, const int port, const wchar_
 	return result;
 }
 
-const size_t requests_per_thread = 10000;
-const size_t thread_count = 16;
-std::atomic<size_t> total_result_count = 0;
+static std::atomic<size_t> total_result_count = 0;
 
 void task_func()
 {
-	Sleep(500);
-
 	for (int i = 0; i < requests_per_thread; i++)
 	{
 		auto result = send_get_request(L"localhost", 8080, L"/sync");
@@ -132,13 +130,17 @@ void task_func()
 
 int main()
 {
-	const auto start_seconds = now();
+	// Wait for server to start
+	Sleep(100);
+	
 	std::cout << "Test HTTP GET\n";
-	std::cout << "Sending " << requests_per_thread * thread_count << " requests on " << thread_count << " threads\n";
+	std::cout << "Sending " << requests_per_thread * request_thread_count << " requests on " << request_thread_count << " threads\n";
+
+	const auto start_seconds = now();
 
 	std::vector<std::thread> threads;
 
-	for (int i = 0; i < thread_count; i++)
+	for (int i = 0; i < request_thread_count; i++)
 	{
 		threads.emplace_back(std::thread(task_func));
 	}
@@ -151,7 +153,10 @@ int main()
 
 	std::cout << std::endl;
 
-	send_get_request(L"localhost", 8080, L"/kill");
+	for (int i = 0; i < request_thread_count; i++)
+	{
+		send_get_request(L"localhost", 8080, L"/kill");
+	}
 
 	const auto elapsed = now() - start_seconds;
 	std::cout << "Completed " << total_result_count << " requests in " << elapsed << " seconds\n";
